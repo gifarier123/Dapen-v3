@@ -1,45 +1,82 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogIn } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('home');
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
+
+      // Simple spy to detect active section
+      const sections = ['home', 'about', 'services', 'gallery', 'news', 'contact'];
+      for (const section of sections) {
+        const element = document.getElementById(section);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          // Check if section is roughly in view (with header offset)
+          if (rect.top >= -100 && rect.top <= 300) {
+            setActiveSection(section);
+            break;
+          }
+        }
+      }
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const navLinks = [
-    { name: 'Beranda', href: '#home' },
-    { name: 'Tentang Kami', href: '#about' },
-    { name: 'Layanan', href: '#services' },
-    { name: 'Galeri', href: '#gallery' },
-    { name: 'Berita', href: '#news' },
-    { name: 'Kontak', href: '#contact' },
+    { name: 'Beranda', href: '#home', id: 'home' },
+    { name: 'Tentang Kami', href: '#about', id: 'about' },
+    { name: 'Layanan', href: '#services', id: 'services' },
+    { name: 'Galeri', href: '#gallery', id: 'gallery' },
+    { name: 'Berita', href: '#news', id: 'news' },
+    { name: 'Kontak', href: '#contact', id: 'contact' },
   ];
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    const targetId = href.replace('#', '');
+    const element = document.getElementById(targetId);
+    if (element) {
+      const headerOffset = 80;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+  
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
+      setIsMobileMenuOpen(false);
+      setActiveSection(targetId);
+    }
+  };
 
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'glass-nav py-3 shadow-sm' : 'bg-transparent py-5'
+        isScrolled ? 'glass-nav py-3 shadow-md' : 'bg-transparent py-5'
       }`}
     >
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex justify-between items-center">
           {/* Logo */}
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-corporate-900 font-bold text-xl shadow-lg border border-corporate-100">
+          <a 
+            href="#home" 
+            className="flex items-center space-x-3 group cursor-pointer" 
+            onClick={(e) => handleNavClick(e, '#home')}
+          >
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-corporate-900 font-bold text-xl shadow-lg border border-corporate-100 transition-transform group-hover:scale-105">
               <span className="text-corporate-900">D</span>
             </div>
             <div className={`font-bold text-xl tracking-tight leading-none ${isScrolled ? 'text-corporate-900' : 'text-white'}`}>
               DAPEN<br/>
               <span className="text-sm font-medium text-accent-500">JASA MARGA</span>
             </div>
-          </div>
+          </a>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center space-x-8">
@@ -47,45 +84,69 @@ export const Header: React.FC = () => {
               <a
                 key={link.name}
                 href={link.href}
-                className={`text-sm font-medium transition-colors hover:text-accent-500 ${
-                  isScrolled ? 'text-gray-700' : 'text-gray-100'
+                onClick={(e) => handleNavClick(e, link.href)}
+                className={`text-sm font-medium transition-colors relative group py-2 ${
+                  activeSection === link.id 
+                    ? 'text-accent-500' 
+                    : isScrolled ? 'text-gray-700 hover:text-accent-500' : 'text-gray-100 hover:text-white'
                 }`}
               >
                 {link.name}
+                <span className={`absolute bottom-0 left-0 w-0 h-0.5 bg-accent-500 transition-all duration-300 group-hover:w-full ${activeSection === link.id ? 'w-full' : ''}`}></span>
               </a>
             ))}
-            <button className="bg-accent-600 hover:bg-accent-700 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-all shadow-lg shadow-accent-500/30 transform hover:scale-105">
+            <a 
+              href="https://dapenjasamarga.com/" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-accent-600 hover:bg-accent-700 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-all shadow-lg shadow-accent-500/30 transform hover:scale-105 hover:-translate-y-0.5"
+            >
+              <LogIn className="w-4 h-4" />
               Login Peserta
-            </button>
+            </a>
           </nav>
 
           {/* Mobile Menu Button */}
           <button 
-            className="md:hidden text-gray-600"
+            className="md:hidden p-2 rounded-lg transition-colors hover:bg-white/10"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle menu"
           >
-            {isMobileMenuOpen ? <X className={isScrolled ? "text-gray-800" : "text-white"} /> : <Menu className={isScrolled ? "text-gray-800" : "text-white"} />}
+            {isMobileMenuOpen ? (
+              <X className={isScrolled ? "text-corporate-900" : "text-white"} />
+            ) : (
+              <Menu className={isScrolled ? "text-corporate-900" : "text-white"} />
+            )}
           </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-white absolute top-full left-0 right-0 shadow-lg border-t border-gray-100 animate-in fade-in slide-in-from-top-5">
-          <div className="flex flex-col p-4 space-y-4">
+        <div className="md:hidden bg-white absolute top-full left-0 right-0 shadow-xl border-t border-gray-100 animate-in fade-in slide-in-from-top-5 max-h-[90vh] overflow-y-auto">
+          <div className="flex flex-col p-6 space-y-4">
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
-                className="text-gray-700 font-medium hover:text-corporate-900 border-b border-gray-50 pb-2"
-                onClick={() => setIsMobileMenuOpen(false)}
+                className={`text-base font-medium border-b border-gray-50 pb-3 flex justify-between items-center ${
+                  activeSection === link.id ? 'text-accent-600' : 'text-gray-700 hover:text-corporate-900'
+                }`}
+                onClick={(e) => handleNavClick(e, link.href)}
               >
                 {link.name}
+                {activeSection === link.id && <div className="w-1.5 h-1.5 rounded-full bg-accent-600"></div>}
               </a>
             ))}
-            <button className="bg-corporate-900 text-white w-full py-3 rounded-lg font-medium mt-2">
+            <a 
+              href="https://dapenjasamarga.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-corporate-900 text-white w-full py-3.5 rounded-xl font-bold mt-4 flex items-center justify-center gap-2 shadow-lg hover:bg-corporate-800 transition-colors"
+            >
+              <LogIn className="w-4 h-4" />
               Login Peserta
-            </button>
+            </a>
           </div>
         </div>
       )}
